@@ -134,15 +134,28 @@ export default function PeladaPublica() {
           {pelada.chave_pix && (
             <div className="mt-4 p-3 bg-grama-50 border border-grama-200 rounded-lg">
               <p className="text-xs font-bold text-grama-800 uppercase tracking-wide">Chave PIX para Pagamento:</p>
-              <p className="text-sm font-mono font-semibold text-carvao mt-1 select-all bg-white p-2 rounded border border-gray-200">
-                {pelada.chave_pix}
-              </p>
-              <p className="text-xs text-carvao/60 mt-1">
+              
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm font-mono font-semibold text-carvao select-all bg-white p-2 rounded border border-gray-200 flex-1 break-all">
+                  {pelada.chave_pix}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(pelada.chave_pix)
+                    alert('Chave Pix copiada!')
+                  }}
+                  className="bg-grama-700 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-grama-600"
+                >
+                  Copiar
+                </button>
+              </div>
+              
+              <p className="text-xs text-carvao/60 mt-2">
                 Realize o pagamento e envie o comprovante ao organizador.
               </p>
             </div>
           )}
-
           <div className="linha-campo my-3 rounded-full" />
           <p className="text-center font-bold text-grama-700">
             {confirmadosCount} / {pelada.limite_jogadores} jogadores
