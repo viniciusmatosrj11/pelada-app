@@ -20,13 +20,14 @@ export default function PeladaAdmin() {
   const [naoEncontrada, setNaoEncontrada] = useState(false)
   const [copiado, setCopiado] = useState(false)
 
-  // Estados para controlar a edição
+  // Estados para controlar a edição (incluindo Pix)
   const [editando, setEditando] = useState(false)
   const [formEdicao, setFormEdicao] = useState({
     nome: '',
     local: '',
     horario: '',
     limite_jogadores: '',
+    chave_pix: '',
   })
 
   const carregar = useCallback(async () => {
@@ -44,6 +45,7 @@ export default function PeladaAdmin() {
       local: peladaData.local || '',
       horario: peladaData.horario || '',
       limite_jogadores: peladaData.limite_jogadores || '',
+      chave_pix: peladaData.chave_pix || '',
     })
 
     const { data: participantesData } = await supabase
@@ -69,11 +71,16 @@ export default function PeladaAdmin() {
         local: formEdicao.local,
         horario: formEdicao.horario,
         limite_jogadores: Number(formEdicao.limite_jogadores),
+        chave_pix: formEdicao.chave_pix,
       })
       .eq('id', pelada.id)
 
     if (!error) {
-      setPelada({ ...pelada, ...formEdicao, limite_jogadores: Number(formEdicao.limite_jogadores) })
+      setPelada({ 
+        ...pelada, 
+        ...formEdicao, 
+        limite_jogadores: Number(formEdicao.limite_jogadores) 
+      })
       setEditando(false)
     } else {
       alert('Erro ao salvar alterações.')
@@ -162,6 +169,15 @@ export default function PeladaAdmin() {
                 required
               />
             </div>
+            <div>
+              <label className="text-xs text-grama-100">Chave Pix (CPF, CNPJ, E-mail, Telefone ou Aleatória)</label>
+              <input
+                className="w-full p-2 text-carvao rounded bg-white"
+                value={formEdicao.chave_pix}
+                onChange={(e) => setFormEdicao({ ...formEdicao, chave_pix: e.target.value })}
+                placeholder="Ex: seu-email@provedor.com"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-grama-100">Horário</label>
@@ -200,6 +216,11 @@ export default function PeladaAdmin() {
             <p className="text-grama-100 text-sm mt-1">
               {pelada.data?.split('-').reverse().join('/')} · {pelada.horario?.slice(0, 5)} · {pelada.local}
             </p>
+            {pelada.chave_pix && (
+              <p className="text-xs text-grama-100 mt-1">
+                💳 Pix Cadastrado: <span className="font-semibold">{pelada.chave_pix}</span>
+              </p>
+            )}
           </div>
         )}
 
@@ -208,6 +229,7 @@ export default function PeladaAdmin() {
         </button>
       </header>
 
+      {/* Restante da página (Resumo, Participantes, etc) */}
       <main className="px-5 -mt-3 space-y-4">
         {/* Resumo */}
         <div className="card">
