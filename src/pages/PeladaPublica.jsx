@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
-// Etapas da tela pública: pergunta -> formulário -> confirmado
+// Etapas da tela pública: pergunta -> formulario -> pronto
 export default function PeladaPublica() {
   const { slug } = useParams()
 
@@ -74,7 +74,6 @@ export default function PeladaPublica() {
       status_pagamento: 'pendente',
     }
 
-    // Se for mensalista, salva a data de cadastro atual para validar a regra dos 30 dias depois
     if (vaiJogar && tipo === 'mensalista') {
       dadosParticipante.data_cadastro_mensalista = new Date().toISOString()
     }
@@ -180,16 +179,18 @@ export default function PeladaPublica() {
                   <button
                     type="button"
                     onClick={() => setTipo('mensalista')}
-                    className={tipo === 'mensalista' ? 'btn-primario flex-1' : 'btn-secundario flex-1'}
+                    className={tipo === 'mensalista' ? 'btn-primario flex-1 flex flex-col items-center' : 'btn-secundario flex-1 flex flex-col items-center'}
                   >
-                    Mensalista
+                    <span>Mensalista</span>
+                    <span className="text-[10px] opacity-80">R$ {Number(pelada.valor_mensalista).toFixed(2)}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setTipo('diarista')}
-                    className={tipo === 'diarista' ? 'btn-primario flex-1' : 'btn-secundario flex-1'}
+                    className={tipo === 'diarista' ? 'btn-primario flex-1 flex flex-col items-center' : 'btn-secundario flex-1 flex flex-col items-center'}
                   >
-                    Diarista
+                    <span>Diarista</span>
+                    <span className="text-[10px] opacity-80">R$ {Number(pelada.valor_diarista).toFixed(2)}</span>
                   </button>
                 </div>
               </div>
