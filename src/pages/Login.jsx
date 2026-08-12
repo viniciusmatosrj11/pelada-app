@@ -27,7 +27,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-4xl mb-2">⚽</div>
-          <h1 className="text-2xl font-bold text-grama-700">Pelada Fácil</h1>
+          <h1 className="text-2xl font-bold text-grama-700">FutManager</h1>
           <p className="text-carvao/60 mt-1">Organize sua pelada em minutos</p>
         </div>
 
