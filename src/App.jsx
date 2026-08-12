@@ -6,10 +6,12 @@ import CriarPelada from './pages/CriarPelada.jsx'
 import PeladaAdmin from './pages/PeladaAdmin.jsx'
 import PeladaPublica from './pages/PeladaPublica.jsx'
 import RotaProtegida from './components/RotaProtegida.jsx'
+import AtivarLicenca from './pages/AtivarLicenca'
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/ativar" element={<AtivarLicenca />} />
       {/* Área do dono da pelada */}
       <Route path="/entrar" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />

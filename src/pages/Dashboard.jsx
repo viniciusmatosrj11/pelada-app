@@ -9,18 +9,35 @@ export default function Dashboard() {
   const [peladas, setPeladas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [copiado, setCopiado] = useState('')
+  const [temLicenca, setTemLicenca] = useState(false)
 
   useEffect(() => {
-    if (user) carregarPeladas()
+    if (user) {
+      verificarLicencaEBuscarPeladas()
+    }
   }, [user])
 
-  async function carregarPeladas() {
+  async function verificarLicencaEBuscarPeladas() {
     setCarregando(true)
+
+    // 1. Verifica se o usuário ativou alguma licença com o e-mail dele
+    const { data: licencaData } = await supabase
+      .from('licencas')
+      .select('*')
+      .eq('comprador_email', user.email)
+      .eq('utilizada', true)
+      .maybeSingle()
+
+    if (licencaData) {
+      setTemLicenca(true)
+    }
+
+    // 2. Busca as peladas do usuário
     const { data: listaPeladas } = await supabase
       .from('peladas')
       .select('*')
       .eq('owner_id', user.id)
-      .order('data', { ascending: true })
+      .order('created_at', { ascending: false })
 
     // Para cada pelada, busca quantos jogadores confirmaram presença
     const comContagem = await Promise.all(
@@ -50,9 +67,12 @@ export default function Dashboard() {
     navigate('/entrar')
   }
 
-  function formatarData(data) {
-    if (!data) return ''
-    const [ano, mes, dia] = data.split('-')
+  function formatarData(pelada) {
+    if (pelada.tipo_evento === 'recorrente') {
+      return `Toda(o) ${pelada.dia_semana}`
+    }
+    if (!pelada.data) return ''
+    const [ano, mes, dia] = pelada.data.split('-')
     return `${dia}/${mes}/${ano}`
   }
 
@@ -71,15 +91,37 @@ export default function Dashboard() {
       </header>
 
       <main className="px-5 -mt-3">
+        {/* AVISO SE NÃO TIVER LICENÇA ATIVADA */}
+        {!carregando && !temLicenca && (
+          <div className="card bg-amber-50 border border-amber-300 mb-4 text-center">
+            <p className="font-bold text-amber-800 mb-1">⚠️ Conta não ativada</p>
+            <p className="text-sm text-carvao/70 mb-3">
+              Para criar e gerenciar suas peladas, insira sua chave serial de ativação.
+            </p>
+            <Link to="/ativar" className="btn-primario inline-block text-sm py-2 px-4">
+              Ativar com Chave Serial (FM-...)
+            </Link>
+          </div>
+        )}
+
         {carregando && <p className="text-center text-carvao/60 mt-10">Carregando...</p>}
 
         {!carregando && peladas.length === 0 && (
           <div className="card text-center mt-6">
             <div className="text-3xl mb-2">🏟️</div>
             <p className="text-carvao/70 mb-4">Você ainda não criou nenhuma pelada.</p>
-            <Link to="/painel/nova" className="btn-primario">
-              + Criar pelada
-            </Link>
+            {temLicenca ? (
+              <Link to="/painel/nova" className="btn-primario">
+                + Criar pelada
+              </Link>
+            ) : (
+              <button
+                onClick={() => alert('Ative sua conta com a chave serial (FM-...) para criar peladas.')}
+                className="btn-primario opacity-50 cursor-not-allowed w-full"
+              >
+                + Criar pelada (Bloqueado)
+              </button>
+            )}
           </div>
         )}
 
@@ -88,7 +130,7 @@ export default function Dashboard() {
             <div key={pelada.id} className="card">
               <h2 className="font-bold text-lg text-grama-700">⚽ {pelada.nome}</h2>
               <p className="text-carvao/70 text-sm mt-1">
-                {formatarData(pelada.data)} · {pelada.horario?.slice(0, 5)}
+                {formatarData(pelada)} · {pelada.horario?.slice(0, 5)}
               </p>
               <p className="text-carvao/70 text-sm">{pelada.local}</p>
 
@@ -111,14 +153,25 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {peladas.length > 0 && (
-        <Link
-          to="/painel/nova"
-          className="fixed bottom-6 right-6 btn-primario shadow-lg rounded-full h-14 w-14 text-2xl p-0"
-          aria-label="Criar pelada"
-        >
-          +
-        </Link>
+      {/* BOTÃO FLUTUANTE DE CRIAR (Só aparece se tiver licença) */}
+      {!carregando && peladas.length > 0 && (
+        temLicenca ? (
+          <Link
+            to="/painel/nova"
+            className="fixed bottom-6 right-6 btn-primario shadow-lg rounded-full h-14 w-14 text-2xl flex items-center justify-center p-0"
+            aria-label="Criar pelada"
+          >
+            +
+          </Link>
+        ) : (
+          <button
+            onClick={() => alert('Ative sua conta com a chave serial (FM-...) para criar peladas.')}
+            className="fixed bottom-6 right-6 btn-primario shadow-lg rounded-full h-14 w-14 text-2xl flex items-center justify-center p-0 opacity-7autan"
+            aria-label="Criar pelada bloqueado"
+          >
+            🔒
+          </button>
+        )
       )}
     </div>
   )

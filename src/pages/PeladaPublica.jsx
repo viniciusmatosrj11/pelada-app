@@ -66,13 +66,20 @@ export default function PeladaPublica() {
       statusPresenca = lotada ? 'espera' : 'confirmado'
     }
 
-    const { error } = await supabase.from('participantes').insert({
+    const dadosParticipante = {
       pelada_id: pelada.id,
       nome: nome.trim(),
       tipo: vaiJogar ? tipo : null,
       status_presenca: statusPresenca,
       status_pagamento: 'pendente',
-    })
+    }
+
+    // Se for mensalista, salva a data de cadastro atual para validar a regra dos 30 dias depois
+    if (vaiJogar && tipo === 'mensalista') {
+      dadosParticipante.data_cadastro_mensalista = new Date().toISOString()
+    }
+
+    const { error } = await supabase.from('participantes').insert(dadosParticipante)
 
     setEnviando(false)
 
@@ -111,7 +118,10 @@ export default function PeladaPublica() {
         <div className="card mb-5">
           <div className="space-y-1 text-sm">
             <p>
-              <span className="font-semibold">Data:</span> {pelada.data?.split('-').reverse().join('/')}
+              <span className="font-semibold">Data/Frequência:</span>{' '}
+              {pelada.tipo_evento === 'recorrente'
+                ? `Toda(o) ${pelada.dia_semana}`
+                : pelada.data?.split('-').reverse().join('/')}
             </p>
             <p>
               <span className="font-semibold">Horário:</span> {pelada.horario?.slice(0, 5)}
@@ -120,6 +130,20 @@ export default function PeladaPublica() {
               <span className="font-semibold">Local:</span> {pelada.local}
             </p>
           </div>
+
+          {/* EXIBIÇÃO DA CHAVE PIX */}
+          {pelada.chave_pix && (
+            <div className="mt-4 p-3 bg-grama-50 border border-grama-200 rounded-lg">
+              <p className="text-xs font-bold text-grama-800 uppercase tracking-wide">Chave PIX para Pagamento:</p>
+              <p className="text-sm font-mono font-semibold text-carvao mt-1 select-all bg-white p-2 rounded border border-gray-200">
+                {pelada.chave_pix}
+              </p>
+              <p className="text-xs text-carvao/60 mt-1">
+                Realize o pagamento e envie o comprovante ao organizador.
+              </p>
+            </div>
+          )}
+
           <div className="linha-campo my-3 rounded-full" />
           <p className="text-center font-bold text-grama-700">
             {confirmadosCount} / {pelada.limite_jogadores} jogadores

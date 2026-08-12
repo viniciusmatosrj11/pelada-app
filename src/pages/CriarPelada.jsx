@@ -23,11 +23,14 @@ export default function CriarPelada() {
   const [form, setForm] = useState({
     nome: '',
     local: '',
+    tipo_evento: 'unica', // 'unica' ou 'recorrente'
     data: '',
+    dia_semana: 'quinta', // padrão para recorrente
     horario: '',
     limite_jogadores: 20,
     valor_mensalista: '',
     valor_diarista: '',
+    chave_pix: '', // novo campo PIX
   })
   const [linkCriado, setLinkCriado] = useState(null)
   const [erro, setErro] = useState('')
@@ -44,19 +47,31 @@ export default function CriarPelada() {
 
     const slug = gerarSlug(form.nome)
 
+    const dadosParaInserir = {
+      owner_id: user.id,
+      nome: form.nome,
+      local: form.local,
+      tipo_evento: form.tipo_evento,
+      horario: form.horario,
+      limite_jogadores: Number(form.limite_jogadores),
+      valor_mensalista: form.valor_mensalista ? Number(form.valor_mensalista) : 0,
+      valor_diarista: form.valor_diarista ? Number(form.valor_diarista) : 0,
+      chave_pix: form.chave_pix || null,
+      slug,
+    }
+
+    // Se for única, envia a data e limpa o dia da semana. Se for recorrente, faz o inverso.
+    if (form.tipo_evento === 'unica') {
+      dadosParaInserir.data = form.data
+      dadosParaInserir.dia_semana = null
+    } else {
+      dadosParaInserir.data = null
+      dadosParaInserir.dia_semana = form.dia_semana
+    }
+
     const { data, error } = await supabase
       .from('peladas')
-      .insert({
-        owner_id: user.id,
-        nome: form.nome,
-        local: form.local,
-        data: form.data,
-        horario: form.horario,
-        limite_jogadores: Number(form.limite_jogadores),
-        valor_mensalista: form.valor_mensalista ? Number(form.valor_mensalista) : 0,
-        valor_diarista: form.valor_diarista ? Number(form.valor_diarista) : 0,
-        slug,
-      })
+      .insert(dadosParaInserir)
       .select()
       .single()
 
@@ -144,15 +159,49 @@ export default function CriarPelada() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-semibold mb-1">Data</label>
-            <input
+            <label className="block text-sm font-semibold mb-1">Tipo de Evento</label>
+            <select
               className="input"
-              type="date"
-              required
-              value={form.data}
-              onChange={(e) => atualizar('data', e.target.value)}
-            />
+              value={form.tipo_evento}
+              onChange={(e) => atualizar('tipo_evento', e.target.value)}
+            >
+              <option value="unica">Data Única</option>
+              <option value="recorrente">Recorrente (Fixa)</option>
+            </select>
           </div>
+
+          {form.tipo_evento === 'unica' ? (
+            <div>
+              <label className="block text-sm font-semibold mb-1">Data</label>
+              <input
+                className="input"
+                type="date"
+                required
+                value={form.data}
+                onChange={(e) => atualizar('data', e.target.value)}
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold mb-1">Toda(o)</label>
+              <select
+                className="input"
+                value={form.dia_semana}
+                onChange={(e) => atualizar('dia_semana', e.target.value)}
+              >
+                <option value="segunda">Segunda-feira</option>
+                <option value="terca">Terça-feira</option>
+                <option value="quarta">Quarta-feira</option>
+                <option value="quinta">Quinta-feira</option>
+                <option value="sexta">Sexta-feira</option>
+                <option value="sabado">Sábado</option>
+                <option value="domingo">Domingo</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-semibold mb-1">Horário</label>
             <input
@@ -163,18 +212,17 @@ export default function CriarPelada() {
               onChange={(e) => atualizar('horario', e.target.value)}
             />
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold mb-1">Limite de jogadores</label>
-          <input
-            className="input"
-            type="number"
-            min={1}
-            required
-            value={form.limite_jogadores}
-            onChange={(e) => atualizar('limite_jogadores', e.target.value)}
-          />
+          <div>
+            <label className="block text-sm font-semibold mb-1">Limite de jogadores</label>
+            <input
+              className="input"
+              type="number"
+              min={1}
+              required
+              value={form.limite_jogadores}
+              onChange={(e) => atualizar('limite_jogadores', e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -202,6 +250,17 @@ export default function CriarPelada() {
               onChange={(e) => atualizar('valor_diarista', e.target.value)}
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold mb-1">Chave PIX para pagamento</label>
+          <input
+            className="input"
+            type="text"
+            placeholder="CPF, E-mail, Celular ou Chave Aleatória"
+            value={form.chave_pix}
+            onChange={(e) => atualizar('chave_pix', e.target.value)}
+          />
         </div>
 
         {erro && <p className="text-barro text-sm font-medium">{erro}</p>}
