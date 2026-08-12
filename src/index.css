@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-giz text-carvao font-body antialiased;
+}
+
+h1, h2, h3, .display {
+  @apply font-display;
+}
+
+/* linhas de campo — usadas como divisor decorativo sutil */
+.linha-campo {
+  background-image: repeating-linear-gradient(
+    90deg,
+    theme('colors.grama.500') 0px,
+    theme('colors.grama.500') 24px,
+    transparent 24px,
+    transparent 40px
+  );
+  height: 3px;
+  opacity: 0.35;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-xl2 px-5 py-3 font-semibold text-base transition active:scale-[0.98];
+}
+.btn-primario {
+  @apply btn bg-grama-600 text-giz hover:bg-grama-700;
+}
+.btn-secundario {
+  @apply btn bg-white text-grama-700 border-2 border-grama-600 hover:bg-grama-50;
+}
+.btn-perigo {
+  @apply btn bg-barro text-giz hover:brightness-95;
+}
+
+.card {
+  @apply bg-white rounded-xl2 shadow-sm border border-black/5 p-5;
+}
+
+.input {
+  @apply w-full rounded-xl border-2 border-black/10 px-4 py-3 text-base focus:outline-none focus:border-grama-500 bg-white;
+}
+
+.badge {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+}
