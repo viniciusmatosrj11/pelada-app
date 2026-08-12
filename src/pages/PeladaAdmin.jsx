@@ -20,6 +20,15 @@ export default function PeladaAdmin() {
   const [naoEncontrada, setNaoEncontrada] = useState(false)
   const [copiado, setCopiado] = useState(false)
 
+  // Estados para controlar a edição
+  const [editando, setEditando] = useState(false)
+  const [formEdicao, setFormEdicao] = useState({
+    nome: '',
+    local: '',
+    horario: '',
+    limite_jogadores: '',
+  })
+
   const carregar = useCallback(async () => {
     setCarregando(true)
     const { data: peladaData } = await supabase.from('peladas').select('*').eq('slug', slug).single()
@@ -30,6 +39,12 @@ export default function PeladaAdmin() {
       return
     }
     setPelada(peladaData)
+    setFormEdicao({
+      nome: peladaData.nome || '',
+      local: peladaData.local || '',
+      horario: peladaData.horario || '',
+      limite_jogadores: peladaData.limite_jogadores || '',
+    })
 
     const { data: participantesData } = await supabase
       .from('participantes')
@@ -44,6 +59,26 @@ export default function PeladaAdmin() {
   useEffect(() => {
     if (user) carregar()
   }, [user, carregar])
+
+  async function salvarEdicao(e) {
+    e.preventDefault()
+    const { error } = await supabase
+      .from('peladas')
+      .update({
+        nome: formEdicao.nome,
+        local: formEdicao.local,
+        horario: formEdicao.horario,
+        limite_jogadores: Number(formEdicao.limite_jogadores),
+      })
+      .eq('id', pelada.id)
+
+    if (!error) {
+      setPelada({ ...pelada, ...formEdicao, limite_jogadores: Number(formEdicao.limite_jogadores) })
+      setEditando(false)
+    } else {
+      alert('Erro ao salvar alterações.')
+    }
+  }
 
   async function alterarPagamento(participante, novoStatus) {
     await supabase.from('participantes').update({ status_pagamento: novoStatus }).eq('id', participante.id)
@@ -105,11 +140,70 @@ export default function PeladaAdmin() {
         <Link to="/painel" className="text-grama-100 text-sm font-semibold">
           ← Minhas peladas
         </Link>
-        <h1 className="text-xl font-bold mt-2">⚽ {pelada.nome}</h1>
-        <p className="text-grama-100 text-sm mt-1">
-          {pelada.data?.split('-').reverse().join('/')} · {pelada.horario?.slice(0, 5)} · {pelada.local}
-        </p>
-        <button onClick={copiarLink} className="mt-3 text-sm bg-grama-600 rounded-lg px-3 py-2 font-semibold">
+
+        {editando ? (
+          <form onSubmit={salvarEdicao} className="mt-3 space-y-3 bg-grama-600/40 p-4 rounded-xl">
+            <h2 className="text-sm font-bold text-grama-100">Editando informações</h2>
+            <div>
+              <label className="text-xs text-grama-100">Nome</label>
+              <input
+                className="w-full p-2 text-carvao rounded bg-white"
+                value={formEdicao.nome}
+                onChange={(e) => setFormEdicao({ ...formEdicao, nome: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs text-grama-100">Local</label>
+              <input
+                className="w-full p-2 text-carvao rounded bg-white"
+                value={formEdicao.local}
+                onChange={(e) => setFormEdicao({ ...formEdicao, local: e.target.value })}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-grama-100">Horário</label>
+                <input
+                  type="time"
+                  className="w-full p-2 text-carvao rounded bg-white"
+                  value={formEdicao.horario}
+                  onChange={(e) => setFormEdicao({ ...formEdicao, horario: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs text-grama-100">Limite Jogadores</label>
+                <input
+                  type="number"
+                  className="w-full p-2 text-carvao rounded bg-white"
+                  value={formEdicao.limite_jogadores}
+                  onChange={(e) => setFormEdicao({ ...formEdicao, limite_jogadores: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button type="submit" className="btn-primario flex-1 text-sm py-2">Salvar</button>
+              <button type="button" onClick={() => setEditando(false)} className="bg-white/20 text-white rounded px-3 py-2 text-sm flex-1">Cancelar</button>
+            </div>
+          </form>
+        ) : (
+          <div>
+            <div className="flex justify-between items-start mt-2">
+              <h1 className="text-xl font-bold">⚽ {pelada.nome}</h1>
+              <button onClick={() => setEditando(true)} className="text-xs bg-grama-600 hover:bg-grama-500 text-white px-2.5 py-1 rounded-md font-semibold">
+                ✏️ Editar
+              </button>
+            </div>
+            <p className="text-grama-100 text-sm mt-1">
+              {pelada.data?.split('-').reverse().join('/')} · {pelada.horario?.slice(0, 5)} · {pelada.local}
+            </p>
+          </div>
+        )}
+
+        <button onClick={copiarLink} className="mt-3 text-sm bg-grama-600 rounded-lg px-3 py-2 font-semibold block w-full text-center">
           {copiado ? 'Link copiado!' : `🔗 pelada.com/${slug}`}
         </button>
       </header>
