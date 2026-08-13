@@ -21,9 +21,6 @@ export default function AtivarLicenca() {
     const codigo = serial.trim().toUpperCase()
 
     try {
-      // Antes: buscava a licença e fazia .update() direto pelo client (sem proteção
-      // contra corrida entre dois usuários ativando o mesmo serial ao mesmo tempo).
-      // Agora: uma única RPC atômica que já usa o e-mail do usuário autenticado.
       const { error } = await supabase.rpc('ativar_licenca_por_serial', {
         p_serial: codigo,
       })
@@ -43,7 +40,7 @@ export default function AtivarLicenca() {
     }
   }
 
-  async function assinarComMercadoPago() {
+  async function assinarComStripe() {
     setErro('')
     setCarregandoAssinatura(true)
     try {
@@ -51,7 +48,7 @@ export default function AtivarLicenca() {
       const token = sessao?.session?.access_token
 
       const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/criar-preferencia`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/criar-checkout-stripe`,
         {
           method: 'POST',
           headers: {
@@ -62,11 +59,11 @@ export default function AtivarLicenca() {
       )
 
       const dados = await resp.json()
-      if (!resp.ok || !dados.init_point) {
+      if (!resp.ok || !dados.url) {
         throw new Error(dados.erro || 'Não foi possível iniciar o pagamento.')
       }
 
-      window.location.href = dados.init_point
+      window.location.href = dados.url
     } catch (err) {
       setErro(err.message)
       setCarregandoAssinatura(false)
@@ -84,7 +81,7 @@ export default function AtivarLicenca() {
           <div className="text-4xl mb-2">🔑</div>
           <h1 className="text-xl font-bold text-grama-700">Ativar sua Conta</h1>
           <p className="text-carvao/70 text-sm mt-1">
-            Assine automaticamente pelo Mercado Pago ou, se você recebeu uma chave serial, ative abaixo.
+            Assine automaticamente pelo Stripe ou, se você recebeu uma chave serial, ative abaixo.
           </p>
         </div>
 
@@ -97,11 +94,11 @@ export default function AtivarLicenca() {
         ) : (
           <>
             <button
-              onClick={assinarComMercadoPago}
+              onClick={assinarComStripe}
               disabled={carregandoAssinatura}
               className="btn-primario w-full mb-4"
             >
-              {carregandoAssinatura ? 'Redirecionando...' : 'Assinar com Mercado Pago'}
+              {carregandoAssinatura ? 'Redirecionando...' : 'Assinar com Stripe'}
             </button>
 
             <div className="text-center text-xs text-carvao/40 mb-4">ou</div>
