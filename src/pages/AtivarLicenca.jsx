@@ -11,6 +11,7 @@ export default function AtivarLicenca() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState(false)
   const [carregando, setCarregando] = useState(false)
+  const [carregandoAssinatura, setCarregandoAssinatura] = useState(false)
 
   async function ativar(e) {
     e.preventDefault()
@@ -20,44 +21,55 @@ export default function AtivarLicenca() {
     const codigo = serial.trim().toUpperCase()
 
     try {
-      // 1. Verifica se o serial existe no banco
-      const { data: licenca, error: erroBusca } = await supabase
-        .from('licencas')
-        .select('*')
-        .eq('serial_key', codigo)
-        .single()
+      // Antes: buscava a licença e fazia .update() direto pelo client (sem proteção
+      // contra corrida entre dois usuários ativando o mesmo serial ao mesmo tempo).
+      // Agora: uma única RPC atômica que já usa o e-mail do usuário autenticado.
+      const { error } = await supabase.rpc('ativar_licenca_por_serial', {
+        p_serial: codigo,
+      })
 
-      if (erroBusca || !licenca) {
-        throw new Error('Chave serial inválida. Verifique o código enviado.')
-      }
-
-      // 2. Verifica se já foi utilizada
-      if (licenca.utilizada) {
-        throw new Error('Esta chave serial já foi utilizada por outro usuário.')
-      }
-
-      // 3. Marca o serial como utilizado e vincula ao email do usuário logado
-      const { error: erroAtualizacao } = await supabase
-        .from('licencas')
-        .update({
-          utilizada: true,
-          comprador_email: user?.email,
-        })
-        .eq('id', licenca.id)
-
-      if (erroAtualizacao) {
-        throw new Error('Erro ao ativar a licença. Tente novamente.')
+      if (error) {
+        throw new Error(error.message || 'Erro ao ativar a licença. Tente novamente.')
       }
 
       setSucesso(true)
       setTimeout(() => {
-        navigate('/painel') // Redireciona para o painel após ativar
+        navigate('/painel')
       }, 2000)
-
     } catch (err) {
       setErro(err.message)
     } finally {
       setCarregando(false)
+    }
+  }
+
+  async function assinarComMercadoPago() {
+    setErro('')
+    setCarregandoAssinatura(true)
+    try {
+      const { data: sessao } = await supabase.auth.getSession()
+      const token = sessao?.session?.access_token
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/criar-preferencia`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      const dados = await resp.json()
+      if (!resp.ok || !dados.init_point) {
+        throw new Error(dados.erro || 'Não foi possível iniciar o pagamento.')
+      }
+
+      window.location.href = dados.init_point
+    } catch (err) {
+      setErro(err.message)
+      setCarregandoAssinatura(false)
     }
   }
 
@@ -72,7 +84,7 @@ export default function AtivarLicenca() {
           <div className="text-4xl mb-2">🔑</div>
           <h1 className="text-xl font-bold text-grama-700">Ativar sua Conta</h1>
           <p className="text-carvao/70 text-sm mt-1">
-            Digite abaixo a chave serial que você recebeu para liberar o seu acesso completo.
+            Assine automaticamente pelo Mercado Pago ou, se você recebeu uma chave serial, ative abaixo.
           </p>
         </div>
 
@@ -83,24 +95,36 @@ export default function AtivarLicenca() {
             <p className="text-sm text-carvao/60 mt-1">Redirecionando para o painel...</p>
           </div>
         ) : (
-          <form onSubmit={ativar} className="card space-y-4">
-            <div>
-              <label className="block text-sm font-semibold mb-1">Chave Serial</label>
-              <input
-                className="input uppercase font-mono tracking-wider"
-                required
-                placeholder="FM-XXXXX-XXXXX"
-                value={serial}
-                onChange={(e) => setSerial(e.target.value)}
-              />
-            </div>
-
-            {erro && <p className="text-barro text-sm font-medium">{erro}</p>}
-
-            <button className="btn-primario w-full" disabled={carregando}>
-              {carregando ? 'Verificando...' : 'Ativar Licença'}
+          <>
+            <button
+              onClick={assinarComMercadoPago}
+              disabled={carregandoAssinatura}
+              className="btn-primario w-full mb-4"
+            >
+              {carregandoAssinatura ? 'Redirecionando...' : 'Assinar com Mercado Pago'}
             </button>
-          </form>
+
+            <div className="text-center text-xs text-carvao/40 mb-4">ou</div>
+
+            <form onSubmit={ativar} className="card space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Chave Serial</label>
+                <input
+                  className="input uppercase font-mono tracking-wider"
+                  required
+                  placeholder="FM-XXXXX-XXXXX"
+                  value={serial}
+                  onChange={(e) => setSerial(e.target.value)}
+                />
+              </div>
+
+              {erro && <p className="text-barro text-sm font-medium">{erro}</p>}
+
+              <button className="btn-primario w-full" disabled={carregando}>
+                {carregando ? 'Verificando...' : 'Ativar com Chave Serial'}
+              </button>
+            </form>
+          </>
         )}
       </div>
     </div>

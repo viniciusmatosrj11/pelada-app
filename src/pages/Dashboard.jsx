@@ -20,15 +20,10 @@ export default function Dashboard() {
   async function verificarLicencaEBuscarPeladas() {
     setCarregando(true)
 
-    // 1. Verifica se o usuário ativou alguma licença com o e-mail dele
-    const { data: licencaData } = await supabase
-      .from('licencas')
-      .select('*')
-      .eq('comprador_email', user.email)
-      .eq('utilizada', true)
-      .maybeSingle()
+    // 1. Verifica se o usuário tem uma licença ativa (e não expirada) com o e-mail dele
+    const { data: licencaAtiva } = await supabase.rpc('minha_licenca_esta_ativa')
 
-    if (licencaData) {
+    if (licencaAtiva === true) {
       setTemLicenca(true)
     }
 

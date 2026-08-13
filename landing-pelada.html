@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organize sua Pelada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch-dark:#0B3D2E;
+    --pitch-mid:#0F4C39;
+    --chalk:#F7F5EE;
+    --ink:#0E1F17;
+    --yellow:#FFD400;
+    --red:#E94F37;
+    --line:rgba(247,245,238,0.16);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Work Sans', sans-serif;
+    background:var(--chalk);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{
+    font-family:'Anton', sans-serif;
+    font-weight:400;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    line-height:0.95;
+  }
+  .mono{font-family:'Space Mono', monospace;}
+  a{text-decoration:none; color:inherit;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px;}
+  section{position:relative;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    background: radial-gradient(120% 100% at 50% -10%, var(--pitch-mid), var(--pitch-dark) 60%);
+    color: var(--chalk);
+    padding: 88px 24px 96px;
+    position:relative;
+    overflow:hidden;
+    text-align:center;
+  }
+  .hero svg.field-lines{
+    position:absolute; inset:0; width:100%; height:100%;
+    opacity:0.5; pointer-events:none;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Space Mono', monospace;
+    font-size:12px; letter-spacing:2px; text-transform:uppercase;
+    color: var(--yellow);
+    border:1px solid rgba(255,212,0,0.4);
+    padding:6px 14px; border-radius:999px;
+    margin-bottom:28px;
+  }
+  .hero h1{
+    font-size:clamp(2.4rem, 6vw, 4.6rem);
+    max-width:920px;
+    margin:0 auto 22px;
+    position:relative; z-index:2;
+  }
+  .hero h1 .hl{color:var(--yellow);}
+  .hero p.sub{
+    font-size:clamp(1.05rem, 2vw, 1.3rem);
+    max-width:600px;
+    margin:0 auto 40px;
+    color:rgba(247,245,238,0.82);
+    font-weight:500;
+    position:relative; z-index:2;
+  }
+  .btn{
+    display:inline-block;
+    font-family:'Anton', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    font-size:1.05rem;
+    background:var(--yellow);
+    color:var(--ink);
+    padding:18px 38px;
+    border-radius:8px;
+    border:3px solid var(--ink);
+    box-shadow:6px 6px 0 var(--ink);
+    transition:transform .15s ease, box-shadow .15s ease;
+    position:relative; z-index:2;
+  }
+  .btn:hover, .btn:focus-visible{
+    transform:translate(-3px,-3px);
+    box-shadow:9px 9px 0 var(--ink);
+  }
+  .btn:active{transform:translate(0,0); box-shadow:2px 2px 0 var(--ink);}
+  .btn:focus-visible{outline:3px solid var(--chalk); outline-offset:3px;}
+
+  /* animated load-in */
+  @media (prefers-reduced-motion: no-preference){
+    .hero .fade-up{animation:fadeUp .7s ease both;}
+    .hero h1{animation-delay:.05s;}
+    .hero p.sub{animation-delay:.18s;}
+    .hero .btn{animation-delay:.3s;}
+    @keyframes fadeUp{
+      from{opacity:0; transform:translateY(16px);}
+      to{opacity:1; transform:translateY(0);}
+    }
+  }
+
+  /* ---------- PROBLEM ---------- */
+  .problem{
+    padding:100px 24px 90px;
+    background:var(--chalk);
+  }
+  .section-head{ text-align:center; max-width:640px; margin:0 auto 56px;}
+  .section-head .kicker{
+    font-family:'Space Mono', monospace;
+    font-size:13px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--red); font-weight:700; margin-bottom:14px; display:block;
+  }
+  .section-head h2{ font-size:clamp(1.8rem,4vw,2.6rem); }
+
+  .card-grid{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:22px;
+    max-width:840px; margin:0 auto;
+  }
+  .yellow-card{
+    background:var(--yellow);
+    border:3px solid var(--ink);
+    border-radius:6px;
+    padding:26px 24px;
+    box-shadow:5px 5px 0 var(--ink);
+    transform:rotate(var(--r,0deg));
+  }
+  .yellow-card:nth-child(1){--r:-1.2deg;}
+  .yellow-card:nth-child(2){--r:1deg;}
+  .yellow-card:nth-child(3){--r:0.8deg;}
+  .yellow-card:nth-child(4){--r:-0.8deg;}
+  .yellow-card .num{
+    font-family:'Space Mono', monospace; font-weight:700;
+    font-size:13px; opacity:0.6; margin-bottom:10px; display:block;
+  }
+  .yellow-card h3{
+    font-size:1.15rem; margin-bottom:10px; text-transform:none;
+    font-family:'Work Sans'; font-weight:800; letter-spacing:0;
+  }
+  .yellow-card p{ font-size:0.95rem; line-height:1.5; color:rgba(14,31,23,0.85);}
+
+  /* ---------- SOLUTION ---------- */
+  .solution{
+    background:var(--pitch-dark);
+    color:var(--chalk);
+    padding:100px 24px;
+  }
+  .solution .section-head .kicker{color:var(--yellow);}
+  .scoreboard{
+    max-width:760px; margin:0 auto;
+    border:2px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .score-row{
+    display:flex; align-items:flex-start; gap:20px;
+    padding:26px 28px;
+    border-bottom:1px solid var(--line);
+  }
+  .score-row:last-child{border-bottom:none;}
+  .score-row .check{
+    flex:0 0 auto;
+    width:34px; height:34px;
+    border-radius:50%;
+    background:var(--yellow);
+    color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Mono'; font-weight:700; font-size:16px;
+  }
+  .score-row h3{
+    font-family:'Work Sans'; text-transform:none; letter-spacing:0;
+    font-weight:800; font-size:1.15rem; margin-bottom:6px;
+  }
+  .score-row p{ color:rgba(247,245,238,0.72); font-size:0.96rem; line-height:1.5;}
+
+  /* ---------- PRICE ---------- */
+  .price{
+    background:var(--chalk);
+    padding:100px 24px;
+    text-align:center;
+  }
+  .price-board{
+    max-width:420px; margin:0 auto;
+    background:var(--ink);
+    color:var(--chalk);
+    border-radius:14px;
+    padding:44px 32px 38px;
+    border:3px solid var(--ink);
+    box-shadow:8px 8px 0 var(--yellow);
+  }
+  .price-board .tag{
+    font-family:'Space Mono'; font-size:12px; letter-spacing:2px;
+    text-transform:uppercase; color:var(--yellow); margin-bottom:18px; display:block;
+  }
+  .price-board .amount{
+    font-family:'Anton'; font-size:clamp(3.2rem,9vw,4.4rem);
+    color:var(--chalk); line-height:1;
+  }
+  .price-board .amount span{ font-size:0.4em; vertical-align:top; color:var(--yellow);}
+  .price-board .per{
+    font-family:'Space Mono'; font-size:14px; color:rgba(247,245,238,0.6);
+    margin-bottom:6px;
+  }
+  .price-board .compare{
+    font-size:0.95rem; color:rgba(247,245,238,0.75);
+    margin:14px 0 26px; font-style:italic;
+  }
+  .price-list{ list-style:none; text-align:left; display:inline-block; margin:0 auto;}
+  .price-list li{
+    font-size:0.96rem; padding:8px 0; display:flex; gap:10px; align-items:flex-start;
+    color:rgba(247,245,238,0.9);
+  }
+  .price-list li::before{
+    content:"✔"; color:var(--yellow); font-weight:700; flex:0 0 auto;
+  }
+
+  /* ---------- CTA FINAL ---------- */
+  .cta-final{
+    background:radial-gradient(120% 140% at 50% 120%, var(--pitch-mid), var(--pitch-dark) 70%);
+    color:var(--chalk);
+    padding:110px 24px 100px;
+    text-align:center;
+  }
+  .cta-final h2{
+    font-size:clamp(1.9rem,5vw,3.1rem);
+    max-width:680px; margin:0 auto 18px;
+  }
+  .cta-final h2 .hl{color:var(--yellow);}
+  .cta-final p.sub{
+    max-width:520px; margin:0 auto 40px;
+    color:rgba(247,245,238,0.78);
+    font-size:1.05rem;
+  }
+  .whistle{
+    width:52px; height:52px; margin:0 auto 26px;
+    display:block;
+  }
+
+  footer{
+    background:var(--ink); color:rgba(247,245,238,0.5);
+    text-align:center; padding:28px 24px;
+    font-family:'Space Mono'; font-size:12px; letter-spacing:1px;
+  }
+
+  @media (max-width:640px){
+    .card-grid{grid-template-columns:1fr;}
+    .yellow-card{transform:none !important;}
+    .score-row{padding:22px 18px;}
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <svg class="field-lines" viewBox="0 0 1080 520" preserveAspectRatio="xMidYMid slice">
+    <circle cx="540" cy="480" r="180" fill="none" stroke="#F7F5EE" stroke-width="2"/>
+    <line x1="0" y1="480" x2="1080" y2="480" stroke="#F7F5EE" stroke-width="2"/>
+    <rect x="440" y="0" width="200" height="90" fill="none" stroke="#F7F5EE" stroke-width="2"/>
+  </svg>
+  <div class="wrap">
+    <span class="eyebrow fade-up">⚽ pra quem organiza pelada de verdade</span>
+    <h1 class="fade-up">Chega de ser refém do grupo do <span class="hl">zap</span> pra organizar a pelada</h1>
+    <p class="sub fade-up">Lista de presença, cobrança de mensalidade e controle de caixa em um só lugar. Organize sua pelada em minutos, não em horas.</p>
+    <a href="#preco" class="btn fade-up">Quero organizar minha pelada</a>
+  </div>
+</section>
+
+<section class="problem" id="problema">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="kicker">Cartão amarelo pra essas dores</span>
+      <h2>Você é o "CPF" do futebol do seu grupo?</h2>
+    </div>
+    <div class="card-grid">
+      <div class="yellow-card">
+        <span class="num">DOR 01</span>
+        <h3>Lista repetida toda semana</h3>
+        <p>Copiar, colar e apagar a mesma lista no grupo, contando "eu vou" um por um.</p>
+      </div>
+      <div class="yellow-card">
+        <span class="num">DOR 02</span>
+        <h3>Aquele Pix que nunca chega</h3>
+        <p>Cobrar, lembrar, cobrar de novo — e o cara que jogou ainda "resolve depois".</p>
+      </div>
+      <div class="yellow-card">
+        <span class="num">DOR 03</span>
+        <h3>Mensalista misturado com diarista</h3>
+        <p>Perder o controle de quem já pagou o mês e quem tem que pagar avulso naquele dia.</p>
+      </div>
+      <div class="yellow-card">
+        <span class="num">DOR 04</span>
+        <h3>Dor de cabeça pra fechar o caixa</h3>
+        <p>Quadra, coletes, água... e você tentando lembrar de cabeça quanto entrou e saiu.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="solution" id="solucao">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="kicker">Apito final pra bagunça</span>
+      <h2>Sua pelada, no automático</h2>
+    </div>
+    <div class="scoreboard">
+      <div class="score-row">
+        <div class="check">1</div>
+        <div>
+          <h3>Link único de inscrição</h3>
+          <p>Manda o link, a galera confirma sozinha. Você só abre e olha a lista pronta.</p>
+        </div>
+      </div>
+      <div class="score-row">
+        <div class="check">2</div>
+        <div>
+          <h3>Mensalistas automáticos</h3>
+          <p>Quem é fixo, entra fixo. Sem precisar confirmar nem cobrar toda semana.</p>
+        </div>
+      </div>
+      <div class="score-row">
+        <div class="check">3</div>
+        <div>
+          <h3>Diaristas sob controle</h3>
+          <p>Cada avulso é registrado certinho, sem se misturar com quem já é mensalista.</p>
+        </div>
+      </div>
+      <div class="score-row">
+        <div class="check">4</div>
+        <div>
+          <h3>Caixa transparente, sempre</h3>
+          <p>Entradas, saídas e saldo atualizados na hora. Sem planilha, sem "depois eu vejo".</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="price" id="preco">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="kicker" style="color:var(--red);">Vale menos que um chopp pós-jogo</span>
+      <h2>O preço</h2>
+    </div>
+    <div class="price-board">
+      <span class="tag">Plano organizador</span>
+      <div class="amount"><span>R$</span> 20</div>
+      <div class="per">por mês</div>
+      <p class="compare">Menos que uma cerveja no bar depois da pelada.</p>
+      <ul class="price-list">
+        <li>Link ilimitado de inscrições</li>
+        <li>Controle de mensalistas e diaristas</li>
+        <li>Gestão completa de caixa</li>
+        <li>Fim da bagunça no WhatsApp</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="cta-final">
+  <div class="wrap">
+    <svg class="whistle" viewBox="0 0 24 24" fill="none" stroke="#FFD400" stroke-width="1.6">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 8v4l3 2"/>
+    </svg>
+    <h2>Sua pelada merece ser organizada por um <span class="hl">sistema</span>, não pela sua paciência</h2>
+    <p class="sub">Assine por R$ 20/mês e nunca mais perca tempo com lista de presença ou Pix atrasado.</p>
+    <a href="#" class="btn">Quero organizar minha pelada agora</a>
+  </div>
+</section>
+
+<footer>
+  FEITO PARA QUEM ORGANIZA A RESENHA DE VERDADE ⚽
+</footer>
+
+</body>
+</html>

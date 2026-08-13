@@ -18,15 +18,14 @@ export default function RotaProtegida({ children }) {
 
   async function checarLicenca() {
     setVerificandoLicenca(true)
-    const { data } = await supabase
-      .from('licencas')
-      .select('*')
-      .eq('comprador_email', user.email)
-      .eq('utilizada', true)
-      .maybeSingle()
+    // Antes: select direto na tabela `licencas` (sem checar expiração, sem RLS).
+    // Agora: RPC que já valida o e-mail do JWT e a data_expiracao no servidor.
+    const { data, error } = await supabase.rpc('minha_licenca_esta_ativa')
 
-    if (data) {
+    if (!error && data === true) {
       setTemLicenca(true)
+    } else {
+      setTemLicenca(false)
     }
     setVerificandoLicenca(false)
   }
@@ -44,7 +43,7 @@ export default function RotaProtegida({ children }) {
     return <Navigate to="/entrar" replace />
   }
 
-  // 2. Se estiver logado, mas NÃO ativou a licença, manda direto para a tela de ativação
+  // 2. Se estiver logado, mas sem licença ativa (nunca ativou ou já expirou), manda para /ativar
   if (!temLicenca) {
     return <Navigate to="/ativar" replace />
   }
