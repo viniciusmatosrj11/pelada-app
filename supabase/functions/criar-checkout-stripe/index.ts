@@ -1,7 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
 
-// Inicializa o Stripe com a chave que salvamos no Painel do Supabase
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
@@ -38,12 +37,11 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Cria a sessão de assinatura no Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: 'price_1U41He1PlPb0qR36hhnbQvlv', // Seu ID de teste correto
+          price: 'price_1U41He1PlPb0qR36hhnbQvlv',
           quantity: 1,
         },
       ],

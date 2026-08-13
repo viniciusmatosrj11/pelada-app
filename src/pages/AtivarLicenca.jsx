@@ -48,7 +48,7 @@ export default function AtivarLicenca() {
       const token = sessao?.session?.access_token
 
       const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/criar-checkout-stripe`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-criar-checkout`,
         {
           method: 'POST',
           headers: {
