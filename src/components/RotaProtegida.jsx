@@ -3,51 +3,59 @@ import { Navigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../useAuth'
 
+// Mantemos o nome original 'RotaProtegida' para não quebrar o código
 export default function RotaProtegida({ children }) {
   const { user, carregando: carregandoAuth } = useAuth()
-  const [verificandoLicenca, setVerificandoLicenca] = useState(true)
-  const [temLicenca, setTemLicenca] = useState(false)
+  const [verificando, setVerificando] = useState(true)
+  const [acessoLiberado, setAcessoLiberado] = useState(false)
 
   useEffect(() => {
     if (user) {
-      checarLicenca()
+      checarAssinatura()
     } else if (!carregandoAuth) {
-      setVerificandoLicenca(false)
+      setVerificando(false)
     }
   }, [user, carregandoAuth])
 
-  async function checarLicenca() {
-    setVerificandoLicenca(true)
-    // Antes: select direto na tabela `licencas` (sem checar expiração, sem RLS).
-    // Agora: RPC que já valida o e-mail do JWT e a data_expiracao no servidor.
-    const { data, error } = await supabase.rpc('minha_licenca_esta_ativa')
+  async function checarAssinatura() {
+    setVerificando(true)
+    try {
+      // Chamamos a mesma função RPC de antes para não quebrar o vínculo
+      // Mas agora ela valida a assinatura mensal de R$ 20 no banco
+      const { data, error } = await supabase.rpc('minha_licenca_esta_ativa')
 
-    if (!error && data === true) {
-      setTemLicenca(true)
-    } else {
-      setTemLicenca(false)
+      if (!error && data === true) {
+        setAcessoLiberado(true)
+      } else {
+        setAcessoLiberado(false)
+      }
+    } catch (err) {
+      console.error("Erro na checagem:", err)
+      setAcessoLiberado(false)
+    } finally {
+      setVerificando(false)
     }
-    setVerificandoLicenca(false)
   }
 
-  if (carregandoAuth || verificandoLicenca) {
+  if (carregandoAuth || verificando) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-grama-600">
+      <div className="min-h-screen flex items-center justify-center text-grama-600 font-medium">
         Carregando...
       </div>
     )
   }
 
-  // 1. Se não estiver logado, manda para o login
+  // 1. Não logado -> vai pro login
   if (!user) {
     return <Navigate to="/entrar" replace />
   }
 
-  // 2. Se estiver logado, mas sem licença ativa (nunca ativou ou já expirou), manda para /ativar
-  if (!temLicenca) {
+  // 2. Logado, mas sem assinatura ativa -> vai pro /ativar
+  // (Como mantivemos o nome da rota /ativar, o redirecionamento funciona normalmente)
+  if (!acessoLiberado) {
     return <Navigate to="/ativar" replace />
   }
 
-  // 3. Se estiver logado e com a licença ativa, libera o acesso à página
+  // 3. Tudo ok -> mostra a página
   return children
 }
