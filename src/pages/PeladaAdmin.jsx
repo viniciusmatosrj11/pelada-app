@@ -107,6 +107,34 @@ export default function PeladaAdmin() {
     )
   }
 
+  async function resetarDiaristas() {
+    const totalDiaristas = participantes.filter((p) => p.tipo === 'diarista').length
+
+    if (totalDiaristas === 0) {
+      alert('Já não há diaristas na lista.')
+      return
+    }
+
+    const confirmar = confirm(
+      `Isso vai apagar os ${totalDiaristas} diarista(s) da lista atual (confirmados, na espera e os que não vão) ` +
+        `para começar a semana com a lista de diaristas vazia. Os mensalistas não são afetados. Quer continuar?`
+    )
+    if (!confirmar) return
+
+    const { error } = await supabase
+      .from('participantes')
+      .delete()
+      .eq('pelada_id', pelada.id)
+      .eq('tipo', 'diarista')
+
+    if (error) {
+      alert('Erro ao resetar a lista de diaristas. Tente novamente.')
+      return
+    }
+
+    setParticipantes((lista) => lista.filter((p) => p.tipo !== 'diarista'))
+  }
+
   function copiarLink() {
     navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
     setCopiado(true)
@@ -271,7 +299,15 @@ export default function PeladaAdmin() {
 
         {/* Diaristas */}
         <div className="card">
-          <h2 className="font-bold text-grama-700 mb-3">Diaristas ({diaristas.length})</h2>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-bold text-grama-700">Diaristas ({diaristas.length})</h2>
+            <button
+              onClick={resetarDiaristas}
+              className="text-xs bg-barro/10 hover:bg-barro/20 text-barro px-2.5 py-1 rounded-md font-semibold"
+            >
+              🔄 Resetar lista
+            </button>
+          </div>
           {diaristas.length === 0 && <p className="text-carvao/50 text-sm">Nenhum diarista confirmado.</p>}
           <ul className="space-y-2">
             {diaristas.map((p) => (
