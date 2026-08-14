@@ -7,6 +7,7 @@ import PeladaAdmin from './pages/PeladaAdmin.jsx'
 import PeladaPublica from './pages/PeladaPublica.jsx'
 import RotaProtegida from './components/RotaProtegida.jsx'
 import AtivarLicenca from './pages/AtivarLicenca'
+import MinhaAssinatura from './pages/MinhaAssinatura.jsx'
 
 export default function App() {
   return (
@@ -20,6 +21,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <Dashboard />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/painel/assinatura"
+        element={
+          <RotaProtegida>
+            <MinhaAssinatura />
           </RotaProtegida>
         }
       />

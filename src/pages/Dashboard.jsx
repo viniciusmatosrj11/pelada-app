@@ -79,9 +79,14 @@ export default function Dashboard() {
             <p className="text-grama-100 text-sm">Olá!</p>
             <h1 className="text-xl font-bold">Minhas peladas</h1>
           </div>
-          <button onClick={sair} className="text-sm text-grama-100 underline">
-            Sair
-          </button>
+          <div className="flex items-center gap-4">
+            <Link to="/painel/assinatura" className="text-sm text-grama-100 underline">
+              Minha Assinatura
+            </Link>
+            <button onClick={sair} className="text-sm text-grama-100 underline">
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
@@ -161,7 +166,7 @@ export default function Dashboard() {
         ) : (
           <button
             onClick={() => alert('Ative sua conta com a chave serial (FM-...) para criar peladas.')}
-            className="fixed bottom-6 right-6 btn-primario shadow-lg rounded-full h-14 w-14 text-2xl flex items-center justify-center p-0 opacity-7autan"
+            className="fixed bottom-6 right-6 btn-primario shadow-lg rounded-full h-14 w-14 text-2xl flex items-center justify-center p-0 opacity-70"
             aria-label="Criar pelada bloqueado"
           >
             🔒
