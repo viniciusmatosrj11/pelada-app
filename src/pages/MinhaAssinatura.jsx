@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabaseClient' // Ajuste o caminho se necessário dependendo de onde está o arquivo
+import { supabase } from '../supabaseClient'
 
 export default function MinhaAssinatura() {
   const [loading, setLoading] = useState(false)
@@ -10,17 +10,17 @@ export default function MinhaAssinatura() {
     try {
       setLoading(true)
 
-      // Pega a sessão atual do usuário logado
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
       if (sessionError || !session) {
         alert("Você precisa estar logado para acessar o portal.")
-        navigate('/Login')
+        navigate('/entrar')
         return
       }
 
-      // URL da sua Edge Function no Supabase (substitua SEU_PROJECT_REF pela sua referência real do Supabase)
-      const functionUrl = 'https://SEU_PROJECT_REF.supabase.co/functions/v1/stripe-criar-portal'
+      // URL dinâmica puxada direto do seu cliente Supabase configurado
+      const supabaseUrl = supabase.supabaseUrl
+      const functionUrl = `${supabaseUrl}/functions/v1/stripe-criar-portal`
 
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -37,7 +37,6 @@ export default function MinhaAssinatura() {
 
       const data = await response.json()
       
-      // Redireciona o usuário para o ambiente seguro do Stripe
       if (data.url) {
         window.location.href = data.url
       } else {

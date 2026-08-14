@@ -21,10 +21,9 @@ serve(async (req) => {
 
   const { data: { user }, error } = await supabaseClient.auth.getUser()
   if (error || !user) {
-    return new Response('Não autorizado', { status: 401 })
+    return new Response(JSON.stringify({ error: 'Não autorizado' }), { status: 401 })
   }
 
-  // Busca o stripe_customer_id na tabela profiles (ajuste o nome da tabela se necessário)
   const { data: profile } = await supabaseClient
     .from('profiles')
     .select('stripe_customer_id')
@@ -35,9 +34,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Assinatura não encontrada' }), { status: 404 })
   }
 
+  // Pega a origem da requisição do front-end para retornar o usuário direto para o painel correto
+  const origin = req.headers.get('origin') || 'http://localhost:5173'
+
   const session = await stripe.billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
-    return_url: `${req.headers.get('origin')}/painel`,
+    return_url: `${origin}/painel`,
   })
 
   return new Response(JSON.stringify({ url: session.url }), {
