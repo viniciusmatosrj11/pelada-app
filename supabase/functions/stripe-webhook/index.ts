@@ -43,7 +43,10 @@ Deno.serve(async (req) => {
 
     const obj = event.data.object as any
     const email = (obj.customer_email || obj.customer_details?.email || obj.metadata?.user_email || '').toLowerCase().trim()
-    const userId = obj.metadata?.user_id || null
+    
+    // Atualizado: prioriza o client_reference_id enviado pelo checkout da Stripe
+    const userId = obj.client_reference_id || obj.metadata?.user_id || null
+    
     const stripeCustomerId =
       typeof obj.customer === 'string' ? obj.customer : obj.customer?.id ?? null
 
