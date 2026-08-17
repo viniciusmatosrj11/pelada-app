@@ -45,7 +45,7 @@ export default function AtivarLicenca() {
         </Link>
 
         <div className="card text-center py-8 px-6 space-y-4 shadow-sm">
-          <div className="text-4xl">⭐</div>
+          <div className="text-4xl">⚽</div>
           <h1 className="text-xl font-bold text-grama-700">Ative seu Acesso</h1>
           <p className="text-carvao/70 text-sm">
             Tenha acesso completo à plataforma por apenas <strong className="text-grama-700">R$ 20,00 por mês</strong>.
