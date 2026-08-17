@@ -36,23 +36,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (event.type !== 'invoice.paid') {
+    // Permitir checkout.session.completed além de invoice.paid
+    if (event.type !== 'invoice.paid' && event.type !== 'checkout.session.completed') {
       return new Response('ok (ignorado)', { status: 200 })
     }
 
-    const invoice = event.data.object as Stripe.Invoice
-    const email = (invoice.customer_email || '').toLowerCase().trim()
+    const obj = event.data.object as any
+    const email = (obj.customer_email || obj.customer_details?.email || obj.metadata?.user_email || '').toLowerCase().trim()
+    const userId = obj.metadata?.user_id || null
     const stripeCustomerId =
-      typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? null
+      typeof obj.customer === 'string' ? obj.customer : obj.customer?.id ?? null
 
-    if (!email) {
-      console.error('stripe-webhook: invoice paga sem e-mail identificável', event.id)
-      return new Response('ok (sem e-mail)', { status: 200 })
+    if (!email && !userId) {
+      console.error('stripe-webhook: evento sem e-mail ou ID identificável', event.id)
+      return new Response('ok (sem identificador)', { status: 200 })
     }
 
     const { error: dedupeError } = await supabaseAdmin
       .from('stripe_eventos_processados')
-      .insert({ event_id: event.id, comprador_email: email })
+      .insert({ event_id: event.id, comprador_email: email || userId })
 
     if (dedupeError) {
       if (dedupeError.code === '23505') {
@@ -62,16 +64,37 @@ Deno.serve(async (req) => {
       return new Response('Erro interno', { status: 500 })
     }
 
-    const { error: rpcError } = await supabaseAdmin.rpc('renovar_licenca', {
-      p_email: email,
-      p_dias: DIAS_POR_CICLO,
-      p_payment_id: event.id,
-      p_stripe_customer_id: stripeCustomerId,
-    })
+    // Atualiza diretamente pelo ID do Supabase se existir, senão usa o e-mail
+    let updateQuery = supabaseAdmin
+      .from('profiles')
+      .update({ 
+        stripe_customer_id: stripeCustomerId,
+        status_assinatura: 'ativo' 
+      })
 
-    if (rpcError) {
-      console.error('stripe-webhook: erro ao renovar licença', rpcError)
-      return new Response('Erro ao renovar licença', { status: 500 })
+    if (userId) {
+      updateQuery = updateQuery.eq('id', userId)
+    } else {
+      updateQuery = updateQuery.eq('email', email)
+    }
+
+    const { error: updateError } = await updateQuery
+    if (updateError) {
+      console.error('stripe-webhook: erro ao atualizar profile', updateError)
+    }
+
+    // Opcional: chama a função de renovar licença se o e-mail estiver presente
+    if (email) {
+      const { error: rpcError } = await supabaseAdmin.rpc('renovar_licenca', {
+        p_email: email,
+        p_dias: DIAS_POR_CICLO,
+        p_payment_id: event.id,
+        p_stripe_customer_id: stripeCustomerId,
+      })
+
+      if (rpcError) {
+        console.error('stripe-webhook: erro ao renovar licença', rpcError)
+      }
     }
 
     return new Response('ok', { status: 200 })
