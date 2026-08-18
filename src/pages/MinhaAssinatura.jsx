@@ -53,8 +53,8 @@ export default function MinhaAssinatura() {
 
       const supabaseUrl = supabase.supabaseUrl
 
-      // 2. Se já tem customer_id, abre o Portal. Se não tem, abre o Checkout.
-      const functionName = profile?.stripe_customer_id ? 'stripe-criar-portal' : 'stripe-criar-checkout'
+      // 2. Direciona para o portal se já tem ID, ou para o checkout correto se não tem
+      const functionName = profile?.stripe_customer_id ? 'stripe-criar-portal' : 'criar-checkout-stripe'
       const functionUrl = `${supabaseUrl}/functions/v1/${functionName}`
 
       const response = await fetch(functionUrl, {
@@ -79,7 +79,7 @@ export default function MinhaAssinatura() {
         throw new Error('URL de redirecionamento não encontrada.')
       }
 
-    } catch (err) {
+    }cta catch (err) {
       console.error(err)
       alert(err.message || "Não foi possível abrir o painel de pagamento.")
       setLoading(false)
