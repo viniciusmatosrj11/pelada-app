@@ -10,44 +10,23 @@ export default function RotaProtegida({ children }) {
 
   useEffect(() => {
     if (user) {
-      checarAcessoOuTrial()
+      checarAcesso()
     } else if (!carregandoAuth) {
       setVerificando(false)
     }
   }, [user, carregandoAuth])
 
-  async function checarAcessoOuTrial() {
+  async function checarAcesso() {
     setVerificando(true)
     try {
-      // 1. Verifica se tem licença/assinatura ativa via banco
-      const { data: licencaAtiva, error } = await supabase.rpc('minha_licenca_esta_ativa')
+      // A função RPC do Supabase valida automaticamente se há assinatura ativa OU se o trial de 7 dias é válido
+      const { data, error } = await supabase.rpc('minha_licenca_esta_ativa')
 
-      if (!error && licencaAtiva === true) {
+      if (!error && data === true) {
         setAcessoLiberado(true)
-        setVerificando(false)
-        return
+      } else {
+        setAcessoLiberado(false)
       }
-
-      // 2. Se não tem assinatura ativa, valida se está dentro dos 7 dias de Teste Gratuito (Trial)
-      // Pegamos a data de criação do usuário logado (auth.users)
-      const createdAt = user?.created_at
-
-      if (createdAt) {
-        const dataCadastro = new Date(createdAt)
-        const dataAtual = new Date()
-        const diferencaEmMilissegundos = dataAtual - dataCadastro
-        const diferencaDias = diferencaEmMilissegundos / (1000 * 60 * 60 * 24)
-
-        // Se estiver dentro de 7 dias, libera o acesso como Trial
-        if (diferencaDias <= 7) {
-          setAcessoLiberado(true)
-          setVerificando(false)
-          return
-        }
-      }
-
-      // 3. Se passou dos 7 dias e não tem assinatura, bloqueia
-      setAcessoLiberado(false)
     } catch (err) {
       console.error("Erro na checagem de acesso:", err)
       setAcessoLiberado(false)
@@ -74,6 +53,6 @@ export default function RotaProtegida({ children }) {
     return <Navigate to="/ativar" replace />
   }
 
-  // 3. Tudo ok (Assinante ou dentro dos 7 dias) -> mostra a página
+  // 3. Tudo ok -> mostra a página
   return children
 }
