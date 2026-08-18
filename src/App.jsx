@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import Login from './pages/Login.jsx'
 import Cadastro from './pages/Cadastro.jsx'
+import AtualizarSenha from './pages/AtualizarSenha.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CriarPelada from './pages/CriarPelada.jsx'
 import PeladaAdmin from './pages/PeladaAdmin.jsx'
@@ -13,9 +14,13 @@ export default function App() {
   return (
     <Routes>
       <Route path="/ativar" element={<AtivarLicenca />} />
-      {/* Área do dono da pelada */}
+      
+      {/* Área de Autenticação */}
       <Route path="/entrar" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
+      <Route path="/atualizar-senha" element={<AtualizarSenha />} />
+
+      {/* Área do dono da pelada */}
       <Route
         path="/painel"
         element={
