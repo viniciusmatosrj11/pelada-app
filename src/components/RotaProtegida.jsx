@@ -19,16 +19,26 @@ export default function RotaProtegida({ children }) {
   async function checarAcesso() {
     setVerificando(true)
     try {
-      // A função RPC do Supabase valida automaticamente se há assinatura ativa OU se o trial de 7 dias é válido
+      // Chama a função RPC criada no Supabase
       const { data, error } = await supabase.rpc('minha_licenca_esta_ativa')
 
-      if (!error && data === true) {
-        setAcessoLiberado(true)
-      } else {
+      if (error) {
+        console.error("Erro na RPC do Supabase:", error.message)
+        // Fallback de segurança: se der erro na RPC, calcula o trial direto no frontend para não travar o usuário
+        if (user?.created_at) {
+          const dias = (new Date() - new Date(user.created_at)) / (1000 * 60 * 60 * 24)
+          if (dias <= 7) {
+            setAcessoLiberado(true)
+            setVerificando(false)
+            return
+          }
+        }
         setAcessoLiberado(false)
+      } else {
+        setAcessoLiberado(data === true)
       }
     } catch (err) {
-      console.error("Erro na checagem de acesso:", err)
+      console.error("Erro inesperado na checagem:", err)
       setAcessoLiberado(false)
     } finally {
       setVerificando(false)
@@ -43,16 +53,13 @@ export default function RotaProtegida({ children }) {
     )
   }
 
-  // 1. Não logado -> vai pro login
   if (!user) {
     return <Navigate to="/entrar" replace />
   }
 
-  // 2. Logado, sem assinatura e com o trial expirado -> vai pro /ativar
   if (!acessoLiberado) {
     return <Navigate to="/ativar" replace />
   }
 
-  // 3. Tudo ok -> mostra a página
   return children
 }
