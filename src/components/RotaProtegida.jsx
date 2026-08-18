@@ -3,7 +3,6 @@ import { Navigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../useAuth'
 
-// Mantemos o nome original 'RotaProtegida' para não quebrar o código
 export default function RotaProtegida({ children }) {
   const { user, carregando: carregandoAuth } = useAuth()
   const [verificando, setVerificando] = useState(true)
@@ -11,26 +10,46 @@ export default function RotaProtegida({ children }) {
 
   useEffect(() => {
     if (user) {
-      checarAssinatura()
+      checarAcessoOuTrial()
     } else if (!carregandoAuth) {
       setVerificando(false)
     }
   }, [user, carregandoAuth])
 
-  async function checarAssinatura() {
+  async function checarAcessoOuTrial() {
     setVerificando(true)
     try {
-      // Chamamos a mesma função RPC de antes para não quebrar o vínculo
-      // Mas agora ela valida a assinatura mensal de R$ 20 no banco
-      const { data, error } = await supabase.rpc('minha_licenca_esta_ativa')
+      // 1. Verifica se tem licença/assinatura ativa via banco
+      const { data: licencaAtiva, error } = await supabase.rpc('minha_licenca_esta_ativa')
 
-      if (!error && data === true) {
+      if (!error && licencaAtiva === true) {
         setAcessoLiberado(true)
-      } else {
-        setAcessoLiberado(false)
+        setVerificando(false)
+        return
       }
+
+      // 2. Se não tem assinatura ativa, valida se está dentro dos 7 dias de Teste Gratuito (Trial)
+      // Pegamos a data de criação do usuário logado (auth.users)
+      const createdAt = user?.created_at
+
+      if (createdAt) {
+        const dataCadastro = new Date(createdAt)
+        const dataAtual = new Date()
+        const diferencaEmMilissegundos = dataAtual - dataCadastro
+        const diferencaDias = diferencaEmMilissegundos / (1000 * 60 * 60 * 24)
+
+        // Se estiver dentro de 7 dias, libera o acesso como Trial
+        if (diferencaDias <= 7) {
+          setAcessoLiberado(true)
+          setVerificando(false)
+          return
+        }
+      }
+
+      // 3. Se passou dos 7 dias e não tem assinatura, bloqueia
+      setAcessoLiberado(false)
     } catch (err) {
-      console.error("Erro na checagem:", err)
+      console.error("Erro na checagem de acesso:", err)
       setAcessoLiberado(false)
     } finally {
       setVerificando(false)
@@ -50,12 +69,11 @@ export default function RotaProtegida({ children }) {
     return <Navigate to="/entrar" replace />
   }
 
-  // 2. Logado, mas sem assinatura ativa -> vai pro /ativar
-  // (Como mantivemos o nome da rota /ativar, o redirecionamento funciona normalmente)
+  // 2. Logado, sem assinatura e com o trial expirado -> vai pro /ativar
   if (!acessoLiberado) {
     return <Navigate to="/ativar" replace />
   }
 
-  // 3. Tudo ok -> mostra a página
+  // 3. Tudo ok (Assinante ou dentro dos 7 dias) -> mostra a página
   return children
 }

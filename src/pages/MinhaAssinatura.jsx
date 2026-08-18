@@ -1,10 +1,34 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
 export default function MinhaAssinatura() {
   const [loading, setLoading] = useState(false)
+  const [diasRestantes, setDiasRestantes] = useState(null)
+  const [emTrial, setEmTrial] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    verificarStatusTrial()
+  }, [])
+
+  async function verificarStatusTrial() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && user.created_at) {
+        const dataCadastro = new Date(user.created_at)
+        const dataAtual = new Date()
+        const diferencaDias = (dataAtual - dataCadastro) / (1000 * 60 * 60 * 24)
+        
+        if (diferencaDias <= 7) {
+          setEmTrial(true)
+          setDiasRestantes(Math.max(0, Math.ceil(7 - diferencaDias)))
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao calcular trial", err)
+    }
+  }
 
   const handleAbrirPortal = async () => {
     try {
@@ -18,7 +42,6 @@ export default function MinhaAssinatura() {
         return
       }
 
-      // URL dinâmica puxada direto do seu cliente Supabase configurado
       const supabaseUrl = supabase.supabaseUrl
       const functionUrl = `${supabaseUrl}/functions/v1/stripe-criar-portal`
 
@@ -53,7 +76,15 @@ export default function MinhaAssinatura() {
   return (
     <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
       <h2>Minha Assinatura</h2>
-      <p>Gerencie seus dados de pagamento, visualize faturas ou cancele seu plano de organizador de pelada de forma segura.</p>
+
+      {emTrial && (
+        <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FCD34D', padding: '15px', borderRadius: '6px', marginBottom: '20px' }}>
+          <p style={{ fontWeight: 'bold', color: '#92400E', margin: '0 0 5px 0' }}>Período de Teste Gratuito Ativo</p>
+          <p style={{ color: '#B45309', margin: 0 }}>Você tem <strong>{diasRestantes} dia(s) restante(s)</strong> de acesso livre para testar todas as funcionalidades do sistema.</p>
+        </div>
+      )}
+
+      <p>Gerencie seus dados de pagamento, visualize faturas ou assine o plano de organizador de pelada para garantir acesso contínuo.</p>
       
       <button 
         onClick={handleAbrirPortal}
@@ -69,7 +100,7 @@ export default function MinhaAssinatura() {
           marginTop: '20px'
         }}
       >
-        {loading ? 'Carregando Portal...' : 'Gerenciar / Cancelar Assinatura'}
+        {loading ? 'Carregando Portal...' : 'Assinar / Gerenciar Plano'}
       </button>
     </div>
   )
