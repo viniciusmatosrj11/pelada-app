@@ -30,32 +30,45 @@ export default function MinhaAssinatura() {
     }
   }
 
-  const handleAbrirPortal = async () => {
+  const handleAssinarOuGerenciar = async () => {
     try {
       setLoading(true)
 
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
       if (sessionError || !session) {
-        alert("Você precisa estar logado para acessar o portal.")
+        alert("Você precisa estar logado para continuar.")
         navigate('/entrar')
         return
       }
 
+      const user = session.user
+
+      // 1. Verifica no banco se o usuário já possui um customer_id do Stripe
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('id', user.id)
+        .single()
+
       const supabaseUrl = supabase.supabaseUrl
-      const functionUrl = `${supabaseUrl}/functions/v1/stripe-criar-portal`
+
+      // 2. Se já tem customer_id, abre o Portal. Se não tem, abre o Checkout.
+      const functionName = profile?.stripe_customer_id ? 'stripe-criar-portal' : 'stripe-criar-checkout'
+      const functionUrl = `${supabaseUrl}/functions/v1/${functionName}`
 
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ email: user.email })
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao gerar o portal de assinatura.')
+        throw new Error(errorData.error || 'Erro ao processar a solicitação com o Stripe.')
       }
 
       const data = await response.json()
@@ -68,7 +81,7 @@ export default function MinhaAssinatura() {
 
     } catch (err) {
       console.error(err)
-      alert(err.message || "Não foi possível abrir o gerenciador de assinatura.")
+      alert(err.message || "Não foi possível abrir o painel de pagamento.")
       setLoading(false)
     }
   }
@@ -87,7 +100,7 @@ export default function MinhaAssinatura() {
       <p>Gerencie seus dados de pagamento, visualize faturas ou assine o plano de organizador de pelada para garantir acesso contínuo.</p>
       
       <button 
-        onClick={handleAbrirPortal}
+        onClick={handleAssinarOuGerenciar}
         disabled={loading}
         style={{
           backgroundColor: '#FFD400',
@@ -100,7 +113,7 @@ export default function MinhaAssinatura() {
           marginTop: '20px'
         }}
       >
-        {loading ? 'Carregando Portal...' : 'Assinar / Gerenciar Plano'}
+        {loading ? 'Processando...' : 'Assinar / Gerenciar Plano'}
       </button>
     </div>
   )
