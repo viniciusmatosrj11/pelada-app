@@ -9,8 +9,8 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 
-const URL_SUCESSO = 'https://pelada-app-alpha.vercel.app/painel?pagamento=sucesso'
-const URL_FALHA = 'https://pelada-app-alpha.vercel.app/painel?pagamento=falha'
+const URL_SUCESSO = 'https://pelada-app-alpha.vercel.app/painel/assinatura?sucesso=true'
+const URL_FALHA = 'https://pelada-app-alpha.vercel.app/painel/assinatura?cancelado=true'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
       success_url: URL_SUCESSO,
       cancel_url: URL_FALHA,
       metadata: {
+        user_id: user.id,
         user_email: user.email.toLowerCase(),
       },
     })

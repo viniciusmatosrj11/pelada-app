@@ -44,12 +44,12 @@ export default function MinhaAssinatura() {
 
       const user = session.user
 
-      // 1. Verifica no banco se o usuário já possui um customer_id do Stripe
+      // 1. Busca segura no banco usando maybeSingle (evita erro 406 se a linha não existir)
       const { data: profile } = await supabase
         .from('profiles')
         .select('stripe_customer_id')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
       const supabaseUrl = supabase.supabaseUrl
 
@@ -79,7 +79,7 @@ export default function MinhaAssinatura() {
         throw new Error('URL de redirecionamento não encontrada.')
       }
 
-    }cta catch (err) {
+    } catch (err) {
       console.error(err)
       alert(err.message || "Não foi possível abrir o painel de pagamento.")
       setLoading(false)
