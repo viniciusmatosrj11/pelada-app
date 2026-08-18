@@ -6,12 +6,14 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
+  const [mensagem, setMensagem] = useState('')
   const [enviando, setEnviando] = useState(false)
   const navigate = useNavigate()
 
   async function entrar(e) {
     e.preventDefault()
     setErro('')
+    setMensagem('')
     setEnviando(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
     setEnviando(false)
@@ -20,6 +22,28 @@ export default function Login() {
       return
     }
     navigate('/painel')
+  }
+
+  async function esqueciSenha() {
+    if (!email) {
+      setErro('Por favor, digite seu e-mail acima para recuperar a senha.')
+      return
+    }
+    setErro('')
+    setMensagem('')
+    setEnviando(true)
+
+    // Envia o link de recuperação usando a URL atual do site na Vercel
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/atualizar-senha`,
+    })
+
+    setEnviando(false)
+    if (error) {
+      setErro('Erro ao enviar e-mail de recuperação: ' + error.message)
+    } else {
+      setMensagem('E-mail de recuperação enviado! Verifique sua caixa de entrada.')
+    }
   }
 
   return (
@@ -44,7 +68,16 @@ export default function Login() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold mb-1">Senha</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-semibold">Senha</label>
+              <button
+                type="button"
+                onClick={esqueciSenha}
+                className="text-xs text-grama-600 font-semibold hover:underline"
+              >
+                Esqueceu a senha?
+              </button>
+            </div>
             <input
               className="input"
               type="password"
@@ -56,9 +89,10 @@ export default function Login() {
           </div>
 
           {erro && <p className="text-barro text-sm font-medium">{erro}</p>}
+          {mensagem && <p className="text-grama-600 text-sm font-medium">{mensagem}</p>}
 
           <button className="btn-primario w-full" disabled={enviando}>
-            {enviando ? 'Entrando...' : 'Entrar'}
+            {enviando ? 'Carregando...' : 'Entrar'}
           </button>
         </form>
 
