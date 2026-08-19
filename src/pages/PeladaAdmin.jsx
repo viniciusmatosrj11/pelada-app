@@ -19,6 +19,7 @@ export default function PeladaAdmin() {
   const [carregando, setCarregando] = useState(true)
   const [naoEncontrada, setNaoEncontrada] = useState(false)
   const [copiado, setCopiado] = useState(false)
+  const [copiadoZap, setCopiadoZap] = useState(false)
 
   // Estados para controlar a edição (incluindo Pix)
   const [editando, setEditando] = useState(false)
@@ -29,6 +30,11 @@ export default function PeladaAdmin() {
     limite_jogadores: '',
     chave_pix: '',
   })
+
+  // Estado para adicionar participante manualmente
+  const [novoNome, setNovoNome] = useState('')
+  const [novoTipo, setNovoTipo] = useState('diarista')
+  const [adicionando, setAdicionando] = useState(false)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -87,6 +93,38 @@ export default function PeladaAdmin() {
     }
   }
 
+  async function adicionarParticipanteManual(e) {
+    e.preventDefault()
+    if (!novoNome.trim()) return
+
+    setAdicionando(true)
+
+    // Verifica se a pelada está lotada para decidir se entra como confirmado ou espera
+    const confirmadosCount = participantes.filter((p) => p.status_presenca === 'confirmado').length
+    const statusPresenca = confirmadosCount >= pelada.limite_jogadores ? 'espera' : 'confirmado'
+
+    const { data, error } = await supabase
+      .from('participantes')
+      .insert([
+        {
+          pelada_id: pelada.id,
+          nome: novoNome.trim(),
+          tipo: novoTipo,
+          status_presenca: statusPresenca,
+          status_pagamento: 'pendente'
+        }
+      ])
+      .select()
+
+    if (error) {
+      alert('Erro ao adicionar participante.')
+    } else if (data) {
+      setParticipantes([...participantes, data[0]])
+      setNovoNome('')
+    }
+    setAdicionando(false)
+  }
+
   async function alterarPagamento(participante, novoStatus) {
     await supabase.from('participantes').update({ status_pagamento: novoStatus }).eq('id', participante.id)
     setParticipantes((lista) =>
@@ -139,6 +177,38 @@ export default function PeladaAdmin() {
     navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
     setCopiado(true)
     setTimeout(() => setCopiado(false), 2000)
+  }
+
+  function compartilharWhatsApp() {
+    const confirmadosLista = participantes.filter((p) => p.status_presenca === 'confirmado')
+    const vagasRestantes = Math.max(pelada.limite_jogadores - confirmadosLista.length, 0)
+    const linkPelada = `${window.location.origin}/${slug}`
+
+    let texto = `⚽ *LISTA DA PELADA: ${pelada.nome.toUpperCase()}* ⚽\n`
+    texto += `📅 Data: ${pelada.data?.split('-').reverse().join('/')} às ${pelada.horario?.slice(0, 5)}\n`
+    texto += `📍 Local: ${pelada.local}\n\n`
+    texto += `✅ *Confirmados (${confirmadosLista.length}/${pelada.limite_jogadores}):*\n`
+
+    if (confirmadosLista.length === 0) {
+      texto += `_Nenhum confirmado ainda. Seja o primeiro!_\n`
+    } else {
+      confirmadosLista.forEach((p, index) => {
+        const tipoIcon = p.tipo === 'mensalista' ? '⭐' : '⚽'
+        texto += `${index + 1}. ${p.nome} ${tipoIcon}\n`
+      })
+    }
+
+    if (vagasRestantes > 0) {
+      texto += `\n🔥 *Faltam apenas ${vagasRestantes} vaga(s)!*\n`
+    } else {
+      texto += `\n🔒 *Pelada Lotada!*\n`
+    }
+
+    texto += `\n👉 Garanta sua vaga ou entre na lista pelo link:\n${linkPelada}`
+
+    navigator.clipboard.writeText(texto)
+    setCopiadoZap(true)
+    setTimeout(() => setCopiadoZap(false), 2500)
   }
 
   if (carregando) {
@@ -252,12 +322,17 @@ export default function PeladaAdmin() {
           </div>
         )}
 
-        <button onClick={copiarLink} className="mt-3 text-sm bg-grama-600 rounded-lg px-3 py-2 font-semibold block w-full text-center">
-          {copiado ? 'Link copiado!' : `🔗 pelada.com/${slug}`}
-        </button>
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          <button onClick={copiarLink} className="text-xs bg-grama-600 hover:bg-grama-500 rounded-lg p-2.5 font-semibold text-center text-white">
+            {copiado ? '✓ Link copiado!' : '🔗 Copiar Link'}
+          </button>
+          <button onClick={compartilharWhatsApp} className="text-xs bg-green-600 hover:bg-green-500 rounded-lg p-2.5 font-semibold text-center text-white">
+            {copiadoZap ? '✓ Lista copiada!' : '🟢 Copiar p/ WhatsApp'}
+          </button>
+        </div>
       </header>
 
-      {/* Restante da página (Resumo, Participantes, etc) */}
+      {/* Restante da página (Resumo, Adicionar Manual, Participantes, etc) */}
       <main className="px-5 -mt-3 space-y-4">
         {/* Resumo */}
         <div className="card">
@@ -279,6 +354,38 @@ export default function PeladaAdmin() {
           {lotada && (
             <p className="text-center text-barro font-semibold text-sm mt-3">Pelada lotada 🔒</p>
           )}
+        </div>
+
+        {/* Adicionar Participante Manualmente */}
+        <div className="card bg-grama-100/50 border border-grama-200">
+          <h2 className="font-bold text-grama-700 mb-2 text-sm">➕ Adicionar participante manualmente</h2>
+          <form onSubmit={adicionarParticipanteManual} className="space-y-2">
+            <input
+              type="text"
+              placeholder="Nome do jogador..."
+              className="w-full p-2 text-sm text-carvao rounded border border-black/10 bg-white"
+              value={novoNome}
+              onChange={(e) => setNovoNome(e.target.value)}
+              required
+            />
+            <div className="flex gap-2">
+              <select
+                className="p-2 text-sm text-carvao rounded border border-black/10 bg-white flex-1"
+                value={novoTipo}
+                onChange={(e) => setNovoTipo(e.target.value)}
+              >
+                <option value="diarista">Diarista</option>
+                <option value="mensalista">Mensalista</option>
+              </select>
+              <button
+                type="submit"
+                disabled={adicionando}
+                className="btn-primario text-sm py-2 px-4"
+              >
+                {adicionando ? 'Adicionando...' : 'Adicionar'}
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Mensalistas */}
