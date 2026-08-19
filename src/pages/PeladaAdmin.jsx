@@ -193,8 +193,7 @@ export default function PeladaAdmin() {
       texto += `_Nenhum confirmado ainda. Seja o primeiro!_\n`
     } else {
       confirmadosLista.forEach((p, index) => {
-        const tipoIcon = p.tipo === 'mensalista' ? '' : ''
-        texto += `${index + 1}. ${p.nome} ${tipoIcon}\n`
+        texto += `${index + 1}. ${p.nome}\n`
       })
     }
 
